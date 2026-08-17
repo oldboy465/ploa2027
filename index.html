@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Analítico Orçamentário - UEMA | PLOA 2027 / LOA 2026</title>
+    <!-- Chart.js and XLSX libraries via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #1e3a8a;
+            --primary-hover: #1e40af;
+            --accent-amber: #d97706;
+            --accent-blue: #2563eb;
+            --accent-green: #059669;
+            --accent-red: #dc2626;
+            --accent-purple: #7c3aed;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.03);
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding: 24px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1680px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HEADER */
+        .header-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-logo {
+            height: 58px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .header-titles h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f2744;
+            letter-spacing: -0.02em;
+        }
+
+        .header-titles p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-success {
+            background-color: #059669;
+            color: #ffffff;
+        }
+        .btn-success:hover {
+            background-color: #047857;
+        }
+
+        .btn-orange {
+            background-color: #ea580c;
+            color: #ffffff;
+        }
+        .btn-orange:hover {
+            background-color: #c2410c;
+        }
+
+        .btn-outline {
+            background-color: #ffffff;
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+        .btn-outline:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        /* EMPTY STATE BANNER */
+        .empty-state-card {
+            background: #ffffff;
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius-lg);
+            padding: 40px 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .empty-state-icon {
+            width: 56px;
+            height: 56px;
+            color: var(--primary);
+        }
+
+        /* FILTERS SECTION */
+        .filters-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 18px 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filters-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .filters-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filters-badge {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #475569;
+        }
+
+        .filter-select, .filter-input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 0.84rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background-color: #ffffff;
+            color: #1e293b;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .filter-select:focus, .filter-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .btn-clear {
+            height: 37px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            color: #64748b;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-clear:hover {
+            background: #fee2e2;
+            border-color: #f87171;
+            color: #dc2626;
+        }
+
+        /* KPI CARDS */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+        }
+
+        .kpi-amber::before { background-color: var(--accent-amber); }
+        .kpi-blue::before { background-color: #1e3a8a; }
+        .kpi-green::before { background-color: var(--accent-green); }
+        .kpi-red::before { background-color: var(--accent-red); }
+        .kpi-purple::before { background-color: var(--accent-purple); }
+
+        .kpi-title {
+            font-size: 0.76rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+        }
+
+        .kpi-amber .kpi-value { color: #b45309; }
+        .kpi-blue .kpi-value { color: #1e3a8a; }
+        .kpi-green .kpi-value { color: #047857; }
+        .kpi-red .kpi-value { color: #b91c1c; }
+        .kpi-purple .kpi-value { color: #6d28d9; }
+
+        .kpi-meta {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-tag {
+            font-weight: 700;
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        .tag-success { background: #d1fae5; color: #065f46; }
+        .tag-warning { background: #fef3c7; color: #92400e; }
+        .tag-info { background: #e0f2fe; color: #075985; }
+
+        /* CHARTS SECTION */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 18px;
+        }
+
+        @media (max-width: 1100px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 18px 22px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .chart-title {
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-container {
+            position: relative;
+            flex: 1;
+            min-height: 290px;
+            width: 100%;
+        }
+
+        /* Scrollable container for full horizontal bars chart */
+        .chart-scroll-wrapper {
+            max-height: 520px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 6px;
+        }
+
+        /* TABLE SECTION */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .table-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-box {
+            position: relative;
+            width: 280px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 7px 12px 7px 32px;
+            font-size: 0.82rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
+            fill: #94a3b8;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            max-height: 600px;
+            position: relative;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.81rem;
+            white-space: nowrap;
+        }
+
+        table.data-table thead {
+            position: sticky;
+            top: 0;
+            background-color: #0f2744;
+            color: #ffffff;
+            z-index: 10;
+        }
+
+        table.data-table th {
+            padding: 10px 12px;
+            font-weight: 600;
+            font-size: 0.76rem;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            user-select: none;
+            border-right: 1px solid rgba(255,255,255,0.08);
+            transition: background 0.15s;
+        }
+
+        table.data-table th:hover {
+            background-color: #1e3a8a;
+        }
+
+        table.data-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            border-right: 1px solid #f8fafc;
+            color: #334155;
+        }
+
+        table.data-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        table.data-table tbody tr:hover {
+            background-color: #f1f5f9;
+            cursor: pointer;
+        }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.82rem; }
+        .font-bold { font-weight: 700; }
+
+        .badge-pill {
+            display: inline-block;
+            padding: 2px 7px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+
+        .badge-gnd-custeio { background-color: #e0f2fe; color: #0369a1; }
+        .badge-gnd-invest { background-color: #fef3c7; color: #b45309; }
+        .badge-gnd-pessoal { background-color: #fce7f3; color: #be185d; }
+
+        .badge-pro {
+            background-color: #ede9fe;
+            color: #5b21b6;
+            font-weight: 600;
+        }
+
+        .btn-view-just {
+            background: none;
+            border: none;
+            color: #2563eb;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+            padding: 0;
+            font-size: 0.78rem;
+        }
+
+        tfoot.data-tfoot {
+            position: sticky;
+            bottom: 0;
+            background-color: #f1f5f9;
+            font-weight: 800;
+            border-top: 2px solid #cbd5e1;
+            z-index: 5;
+        }
+
+        tfoot.data-tfoot td {
+            padding: 10px 12px;
+            color: #0f172a;
+            border-top: 2px solid #cbd5e1;
+        }
+
+        /* PAGINATION */
+        .table-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .page-btn {
+            min-width: 32px;
+            height: 32px;
+            padding: 0 8px;
+            font-size: 0.8rem;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* MODAL DIALOGS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 680px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            background: #0f2744;
+            color: #ffffff;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-close:hover { color: #ffffff; }
+
+        .modal-body {
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .detail-label {
+            font-weight: 700;
+            color: #64748b;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            color: #0f172a;
+            font-size: 0.86rem;
+        }
+
+        .justificativa-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid var(--accent-green);
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: #1e293b;
+        }
+
+        .dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent-blue);
+            background: #eff6ff;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+                color: #000000;
+            }
+            .header-actions, .filters-card, .table-toolbar, .table-pagination, .btn-view-just, .empty-state-card {
+                display: none !important;
+            }
+            .container {
+                max-width: 100%;
+                gap: 15px;
+            }
+            .kpi-card, .chart-card, .table-card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                page-break-inside: avoid;
+            }
+            .table-responsive {
+                max-height: none;
+                overflow: visible;
+            }
+            .chart-scroll-wrapper {
+                max-height: none;
+                overflow: visible;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER CARD -->
+    <header class="header-card">
+        <div class="header-left">
+            <img src="https://dados.uema.br/wp-content/uploads/2023/12/Brasao_UEMA_vertical.png" alt="Brasão UEMA" class="header-logo" onerror="this.style.display='none'">
+            <div class="header-titles">
+                <h1>Painel Analítico de Planejamento e Execução Orçamentária</h1>
+                <p>Universidade Estadual do Maranhão • Análise BaseV2 (PLOA 2027 / LOA 2026)</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openImportModal()">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Importar Planilha (.xlsx)
+            </button>
+            <button class="btn btn-success" onclick="exportFilteredCSV()">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Exportar CSV
+            </button>
+            <button class="btn btn-orange" onclick="window.print()">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Exportar Relatório / PDF
+            </button>
+            <button class="btn btn-outline" onclick="clearAllData()" title="Limpar dados carregados na sessão">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Limpar Base
+            </button>
+        </div>
+    </header>
+
+    <!-- EMPTY STATE / WELCOME BANNER (Shows only if rawData is empty) -->
+    <div id="emptyStateBanner" class="empty-state-card" onclick="openImportModal()">
+        <svg class="empty-state-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+        </svg>
+        <h3 style="font-size: 1.15rem; color: #0f2744; font-weight: 700;">Nenhuma Planilha Carregada</h3>
+        <p style="color: var(--text-muted); max-width: 500px;">
+            Clique no botão <strong>"Importar Planilha (.xlsx)"</strong> acima ou clique aqui para selecionar o arquivo <strong>PLOA 2027.xlsx</strong>. A aba <strong>BaseV2</strong> será lida e processada dinamicamente.
+        </p>
+        <button class="btn btn-primary" style="margin-top: 6px;">
+            Carregar Planilha BaseV2 (.xlsx)
+        </button>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT (Visible when data is loaded) -->
+    <div id="dashboardContent" style="display: none; flex-direction: column; gap: 20px;">
+
+        <!-- FILTERS CARD -->
+        <section class="filters-card">
+            <div class="filters-header">
+                <div class="filters-title">
+                    <svg width="18" height="18" fill="none" stroke="#2563eb" stroke-width="2" viewBox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Filtros Multidimensionais
+                </div>
+                <span class="filters-badge" id="filterStatusBadge">0 subações selecionadas</span>
+            </div>
+            <div class="filters-grid">
+                <!-- Pró-Reitoria -->
+                <div class="filter-group">
+                    <label class="filter-label">Pró-Reitoria</label>
+                    <select id="filterProReitoria" class="filter-select" onchange="applyFilters()">
+                        <option value="">Todas as Pró-Reitorias</option>
+                    </select>
+                </div>
+
+                <!-- Natureza da Despesa / GND -->
+                <div class="filter-group">
+                    <label class="filter-label">Natureza (GND)</label>
+                    <select id="filterGND" class="filter-select" onchange="applyFilters()">
+                        <option value="">Todas as Naturezas</option>
+                    </select>
+                </div>
+
+                <!-- Programa de Trabalho -->
+                <div class="filter-group">
+                    <label class="filter-label">Programa de Trabalho</label>
+                    <select id="filterPrograma" class="filter-select" onchange="applyFilters()">
+                        <option value="">Todos os Programas</option>
+                    </select>
+                </div>
+
+                <!-- Ação Orçamentária -->
+                <div class="filter-group">
+                    <label class="filter-label">Ação Orçamentária</label>
+                    <select id="filterAcao" class="filter-select" onchange="applyFilters()">
+                        <option value="">Todas as Ações</option>
+                    </select>
+                </div>
+
+                <!-- Subação Específica -->
+                <div class="filter-group">
+                    <label class="filter-label">Subação Específica</label>
+                    <select id="filterSubacao" class="filter-select" onchange="applyFilters()">
+                        <option value="">Todas as Subações</option>
+                    </select>
+                </div>
+
+                <!-- Filtro Especial -->
+                <div class="filter-group">
+                    <label class="filter-label">Filtro Especial</label>
+                    <select id="filterEspecial" class="filter-select" onchange="applyFilters()">
+                        <option value="todos">Todas as Linhas</option>
+                        <option value="com_necessidade">Apenas com Necessidade 2027</option>
+                        <option value="com_justificativa">Apenas com Justificativa</option>
+                        <option value="sem_projecao">Sem Projeção de Fechamento</option>
+                    </select>
+                </div>
+
+                <!-- Botão Limpar -->
+                <div class="filter-group">
+                    <label class="filter-label">&nbsp;</label>
+                    <button class="btn-clear" onclick="clearFilters()">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                        Limpar Filtros
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI CARDS -->
+        <section class="kpi-grid">
+            <!-- KPI 1: LOA 2026 -->
+            <div class="kpi-card kpi-amber">
+                <div>
+                    <div class="kpi-title">Total Dotação LOA 2026</div>
+                    <div class="kpi-value" id="kpiLOA">R$ 0,00</div>
+                </div>
+                <div class="kpi-meta">
+                    <span>Subações na seleção: <strong id="kpiCountSubacoes">0</strong></span>
+                    <span class="kpi-tag tag-warning">Orçado</span>
+                </div>
+            </div>
+
+            <!-- KPI 2: Projeção 2026 -->
+            <div class="kpi-card kpi-blue">
+                <div>
+                    <div class="kpi-title">Projeção Fechamento 2026</div>
+                    <div class="kpi-value" id="kpiProjecao">R$ 0,00</div>
+                </div>
+                <div class="kpi-meta">
+                    <span>Execução prevista: <strong id="kpiPercProjecao">0,0%</strong></span>
+                    <span class="kpi-tag tag-info">Fechamento</span>
+                </div>
+            </div>
+
+            <!-- KPI 3: Necessidade 2027 -->
+            <div class="kpi-card kpi-green">
+                <div>
+                    <div class="kpi-title">Necessidade Solicitada 2027</div>
+                    <div class="kpi-value" id="kpiNecessidade">R$ 0,00</div>
+                </div>
+                <div class="kpi-meta">
+                    <span>Demandas cadastradas: <strong id="kpiCountNecessidades">0</strong></span>
+                    <span class="kpi-tag tag-success">PLOA 2027</span>
+                </div>
+            </div>
+
+            <!-- KPI 4: Variação -->
+            <div class="kpi-card kpi-red">
+                <div>
+                    <div class="kpi-title">Variação (Necessidade vs Projeção)</div>
+                    <div class="kpi-value" id="kpiVariacao">R$ 0,00</div>
+                </div>
+                <div class="kpi-meta">
+                    <span>Variação percentual: <strong id="kpiPercVariacao">0,0%</strong></span>
+                    <span class="kpi-tag tag-warning">Aporte Adicional</span>
+                </div>
+            </div>
+
+            <!-- KPI 5: Justificativas -->
+            <div class="kpi-card kpi-purple">
+                <div>
+                    <div class="kpi-title">Justificativas Cadastradas</div>
+                    <div class="kpi-value" id="kpiJustificativas">0</div>
+                </div>
+                <div class="kpi-meta">
+                    <span>Cobertura formalizada: <strong id="kpiPercJustificativas">0,0%</strong></span>
+                    <span class="kpi-tag tag-info">Memória de Cálculo</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHARTS SECTION 1 -->
+        <section class="charts-row">
+            <!-- Gráfico Comparativo por Pró-Reitoria -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <svg width="18" height="18" fill="none" stroke="#2563eb" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        1 - Comparativo Orçamentário por Pró-Reitoria (LOA 2026 vs Projeção 2026 vs Necessidade 2027)
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartProReitoriaCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico GND -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <svg width="18" height="18" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0110 10h-10V2z"></path></svg>
+                        2 - Distribuição por Natureza (GND)
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartGNDCanvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHARTS SECTION 2: Dynamic Horizontal Bars Chart (ALL SUBAÇÕES) -->
+        <section class="charts-row">
+            <div class="chart-card" style="grid-column: 1 / -1;">
+                <div class="chart-header">
+                    <div class="chart-title" id="drilldownTitle">
+                        <svg width="18" height="18" fill="none" stroke="#059669" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        3 - Detalhamento Completo das Subações Orçamentárias (Barras Horizontais)
+                    </div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Valores em R$ (Reais) • Vinculado aos Filtros Ativos</span>
+                </div>
+                <div class="chart-scroll-wrapper" id="subacoesScrollWrapper">
+                    <div id="subacoesCanvasContainer" style="position: relative; width: 100%; min-height: 380px;">
+                        <canvas id="chartSubacoesCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYTICAL TABLE -->
+        <section class="table-card">
+            <div class="table-toolbar">
+                <div class="table-title">
+                    <svg width="20" height="20" fill="none" stroke="#1e3a8a" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                    Base Detalhada de Subações Orçamentárias
+                </div>
+                <div class="table-controls">
+                    <div class="search-box">
+                        <svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="tableSearchInput" placeholder="Buscar subação, ação, programa, texto..." onkeyup="onTableSearch()">
+                    </div>
+                    <select id="pageSizeSelect" class="filter-select" style="width: auto;" onchange="onPageSizeChange()">
+                        <option value="15">15 linhas</option>
+                        <option value="30">30 linhas</option>
+                        <option value="50">50 linhas</option>
+                        <option value="100">100 linhas</option>
+                        <option value="all">Todas as linhas</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" id="analyticalDataTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('subacao_cod')" title="Clique para ordenar">Cód. Subação ⬍</th>
+                            <th onclick="sortTable('subacao_desc')" title="Clique para ordenar">Descrição da Subação ⬍</th>
+                            <th onclick="sortTable('pro_reitoria')" title="Clique para ordenar">Pró-Reitoria ⬍</th>
+                            <th onclick="sortTable('gnd_desc')" title="Clique para ordenar">Natureza (GND) ⬍</th>
+                            <th onclick="sortTable('acao_desc')" title="Clique para ordenar">Ação Orçamentária ⬍</th>
+                            <th onclick="sortTable('programa_desc')" title="Clique para ordenar">Programa ⬍</th>
+                            <th class="text-right" onclick="sortTable('loa_2026')" title="Clique para ordenar">LOA 2026 ⬍</th>
+                            <th class="text-right" onclick="sortTable('projecao_2026')" title="Clique para ordenar">Projeção 2026 ⬍</th>
+                            <th class="text-right" onclick="sortTable('necessidade_2027')" title="Clique para ordenar">Necessidade 2027 ⬍</th>
+                            <th class="text-center">Justificativa 2027</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                    <tfoot class="data-tfoot">
+                        <tr>
+                            <td colspan="6" class="font-bold">TOTAL GERAL DA SELEÇÃO ATIVA:</td>
+                            <td class="text-right font-mono font-bold" id="tfootLOA">R$ 0,00</td>
+                            <td class="text-right font-mono font-bold" id="tfootProjecao">R$ 0,00</td>
+                            <td class="text-right font-mono font-bold" id="tfootNecessidade">R$ 0,00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="table-pagination">
+                <div id="paginationInfo">Mostrando 0 registros</div>
+                <div class="pagination-buttons" id="paginationControls"></div>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+<!-- MODAL: DETALHES E JUSTIFICATIVA -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Detalhes da Subação Orçamentária</h3>
+            <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: IMPORTAR PLANILHA EXCEL -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Importar Planilha PLOA 2027 (.xlsx)</h3>
+            <button class="modal-close" onclick="closeImportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+                Selecione ou arraste o arquivo <strong>PLOA 2027.xlsx</strong>. O sistema importará e processará a aba <strong>BaseV2</strong> automaticamente, identificando perfeitamente ações, programas, subações e todos os valores.
+            </p>
+            <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                <svg width="40" height="40" fill="none" stroke="#2563eb" stroke-width="1.5" viewBox="0 0 24 24" style="margin: 0 auto 10px;"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <div style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">Clique para selecionar ou arraste o arquivo aqui</div>
+                <div style="font-size: 0.78rem; color: #64748b;">Suporta arquivos Microsoft Excel (.xlsx, .xls)</div>
+                <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleFileSelect(event)">
+            </div>
+            <div id="importStatus" style="font-size: 0.85rem; font-weight: 600; text-align: center; display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// ESTADO DA APLICAÇÃO (SEM BASE EMBUTIDA)
+// ==========================================
+let rawData = [];
+let filteredData = [];
+let currentPage = 1;
+let pageSize = 15;
+let sortColumn = 'subacao_cod';
+let sortDirection = 'asc';
+
+// Instâncias dos Gráficos Chart.js
+let chartProReitoriaInstance = null;
+let chartGNDInstance = null;
+let chartSubacoesInstance = null;
+
+// Formatação Monetária Padrão Real Brasileiro (R$ 1.234.567,89)
+function formatBRL(val, decimals = 2) {
+    if (val === null || val === undefined || isNaN(val) || val === '') return '-';
+    const num = Number(val);
+    return num.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+function formatNumber(val, decimals = 2) {
+    if (val === null || val === undefined || isNaN(val) || val === '') return '-';
+    return Number(val).toLocaleString('pt-BR', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    initDropzone();
+    updateViewVisibility();
+});
+
+function updateViewVisibility() {
+    const emptyBanner = document.getElementById('emptyStateBanner');
+    const dashboard = document.getElementById('dashboardContent');
+    if (rawData && rawData.length > 0) {
+        emptyBanner.style.display = 'none';
+        dashboard.style.display = 'flex';
+    } else {
+        emptyBanner.style.display = 'flex';
+        dashboard.style.display = 'none';
+    }
+}
+
+// Preencher Dropdowns com opções únicas separando Programa e Ação
+function populateFilterOptions() {
+    if (!rawData || rawData.length === 0) return;
+
+    // Pró-Reitorias
+    const proReitorias = [...new Set(rawData.map(d => d.pro_reitoria).filter(Boolean))].sort();
+
+    // Natureza (GND)
+    const gnds = [...new Set(rawData.map(d => d.gnd_desc).filter(Boolean))].sort();
+
+    // Programas de Trabalho (Mapeados exclusivamente por Programa N e Descrição)
+    const programasMap = new Map();
+    rawData.forEach(d => {
+        if (d.programa_cod && d.programa_desc) {
+            const key = `${d.programa_cod} - ${d.programa_desc}`;
+            if (!programasMap.has(key)) {
+                programasMap.set(key, { cod: d.programa_cod, desc: d.programa_desc, label: key });
+            }
+        }
+    });
+    const programas = Array.from(programasMap.values()).sort((a, b) => a.cod - b.cod);
+
+    // Ações Orçamentárias (Mapeadas exclusivamente por Ação N e Descrição)
+    const acoesMap = new Map();
+    rawData.forEach(d => {
+        if (d.acao_cod && d.acao_desc) {
+            const key = `${d.acao_cod} - ${d.acao_desc}`;
+            if (!acoesMap.has(key)) {
+                acoesMap.set(key, { cod: d.acao_cod, desc: d.acao_desc, label: key });
+            }
+        }
+    });
+    const acoes = Array.from(acoesMap.values()).sort((a, b) => a.cod - b.cod);
+
+    // Subações (Mapeadas por Subação N e Descrição)
+    const subacoesMap = new Map();
+    rawData.forEach(d => {
+        if (d.subacao_cod) {
+            const key = `${d.subacao_cod} - ${d.subacao_desc}`;
+            if (!subacoesMap.has(key)) {
+                subacoesMap.set(key, { cod: d.subacao_cod, desc: d.subacao_desc, label: key });
+            }
+        }
+    });
+    const subacoes = Array.from(subacoesMap.values()).sort((a, b) => a.cod - b.cod);
+
+    fillSelectSimple('filterProReitoria', proReitorias);
+    fillSelectSimple('filterGND', gnds);
+    fillSelectObjects('filterPrograma', programas, 'cod', 'label');
+    fillSelectObjects('filterAcao', acoes, 'cod', 'label');
+    fillSelectObjects('filterSubacao', subacoes, 'cod', 'label');
+}
+
+function fillSelectSimple(selectId, options) {
+    const select = document.getElementById(selectId);
+    const currentValue = select.value;
+    const firstOptionText = select.options[0].text;
+    select.innerHTML = `<option value="">${firstOptionText}</option>`;
+    options.forEach(opt => {
+        const optionEl = document.createElement('option');
+        optionEl.value = opt;
+        optionEl.textContent = opt;
+        select.appendChild(optionEl);
+    });
+    select.value = currentValue;
+}
+
+function fillSelectObjects(selectId, items, valueKey, labelKey) {
+    const select = document.getElementById(selectId);
+    const currentValue = select.value;
+    const firstOptionText = select.options[0].text;
+    select.innerHTML = `<option value="">${firstOptionText}</option>`;
+    items.forEach(item => {
+        const optionEl = document.createElement('option');
+        optionEl.value = item[valueKey];
+        optionEl.textContent = item[labelKey];
+        select.appendChild(optionEl);
+    });
+    select.value = currentValue;
+}
+
+// Aplicar Filtros
+function applyFilters() {
+    if (!rawData || rawData.length === 0) return;
+
+    const proReitoria = document.getElementById('filterProReitoria').value;
+    const gnd = document.getElementById('filterGND').value;
+    const programaCod = document.getElementById('filterPrograma').value;
+    const acaoCod = document.getElementById('filterAcao').value;
+    const subacaoCod = document.getElementById('filterSubacao').value;
+    const especial = document.getElementById('filterEspecial').value;
+    const search = document.getElementById('tableSearchInput').value.toLowerCase().trim();
+
+    filteredData = rawData.filter(row => {
+        if (proReitoria && row.pro_reitoria !== proReitoria) return false;
+        if (gnd && row.gnd_desc !== gnd) return false;
+        if (programaCod && String(row.programa_cod) !== String(programaCod)) return false;
+        if (acaoCod && String(row.acao_cod) !== String(acaoCod)) return false;
+        if (subacaoCod && String(row.subacao_cod) !== String(subacaoCod)) return false;
+
+        if (especial === 'com_necessidade' && (row.necessidade_2027 === null || row.necessidade_2027 === 0)) return false;
+        if (especial === 'com_justificativa' && (!row.justificativa || row.justificativa.trim() === '')) return false;
+        if (especial === 'sem_projecao' && (row.projecao_2026 !== null && row.projecao_2026 !== '')) return false;
+
+        if (search) {
+            const fullText = `${row.subacao_cod} ${row.subacao_desc} ${row.acao_cod} ${row.acao_desc} ${row.programa_cod} ${row.programa_desc} ${row.gnd_desc} ${row.pro_reitoria} ${row.justificativa}`.toLowerCase();
+            if (!fullText.includes(search)) return false;
+        }
+
+        return true;
+    });
+
+    // Atualizar badge de contagem
+    document.getElementById('filterStatusBadge').textContent = `${filteredData.length} de ${rawData.length} subações`;
+
+    // Atualizar KPIs
+    updateKPIs();
+
+    // Atualizar Gráficos
+    updateCharts();
+
+    // Renderizar Tabela
+    currentPage = 1;
+    renderTable();
+}
+
+function clearFilters() {
+    document.getElementById('filterProReitoria').value = '';
+    document.getElementById('filterGND').value = '';
+    document.getElementById('filterPrograma').value = '';
+    document.getElementById('filterAcao').value = '';
+    document.getElementById('filterSubacao').value = '';
+    document.getElementById('filterEspecial').value = 'todos';
+    document.getElementById('tableSearchInput').value = '';
+    applyFilters();
+}
+
+function onTableSearch() {
+    applyFilters();
+}
+
+// Atualizar KPIs
+function updateKPIs() {
+    const totalLOA = filteredData.reduce((acc, r) => acc + (r.loa_2026 || 0), 0);
+    const totalProjecao = filteredData.reduce((acc, r) => acc + (r.projecao_2026 || 0), 0);
+    const totalNecessidade = filteredData.reduce((acc, r) => acc + (r.necessidade_2027 || 0), 0);
+    const countNecessidades = filteredData.filter(r => r.necessidade_2027 !== null && r.necessidade_2027 > 0).length;
+    const countJustificativas = filteredData.filter(r => r.justificativa && r.justificativa.trim() !== '').length;
+
+    const percProjecao = totalLOA > 0 ? ((totalProjecao / totalLOA) * 100).toFixed(1) + '%' : '0,0%';
+    const variacao = totalNecessidade - totalProjecao;
+    const percVariacao = totalProjecao > 0 ? (((totalNecessidade - totalProjecao) / totalProjecao) * 100).toFixed(1) + '%' : '0,0%';
+    const percJust = filteredData.length > 0 ? ((countJustificativas / filteredData.length) * 100).toFixed(1) + '%' : '0,0%';
+
+    document.getElementById('kpiLOA').textContent = formatBRL(totalLOA);
+    document.getElementById('kpiCountSubacoes').textContent = filteredData.length;
+
+    document.getElementById('kpiProjecao').textContent = formatBRL(totalProjecao);
+    document.getElementById('kpiPercProjecao').textContent = percProjecao;
+
+    document.getElementById('kpiNecessidade').textContent = formatBRL(totalNecessidade);
+    document.getElementById('kpiCountNecessidades').textContent = countNecessidades;
+
+    document.getElementById('kpiVariacao').textContent = formatBRL(variacao);
+    document.getElementById('kpiPercVariacao').textContent = percVariacao;
+
+    document.getElementById('kpiJustificativas').textContent = countJustificativas;
+    document.getElementById('kpiPercJustificativas').textContent = percJust;
+
+    // Atualizar rodapé da tabela
+    document.getElementById('tfootLOA').textContent = formatBRL(totalLOA);
+    document.getElementById('tfootProjecao').textContent = formatBRL(totalProjecao);
+    document.getElementById('tfootNecessidade').textContent = formatBRL(totalNecessidade);
+}
+
+// Atualizar Gráficos Chart.js
+function updateCharts() {
+    if (typeof Chart === 'undefined' || !rawData || rawData.length === 0) return;
+
+    // 1. Gráfico Pró-Reitoria (Colunas verticais)
+    const proReitorias = [...new Set(rawData.map(d => d.pro_reitoria).filter(Boolean))].sort();
+    const dataLOAByPro = [];
+    const dataProjByPro = [];
+    const dataNecByPro = [];
+
+    proReitorias.forEach(pro => {
+        const rows = filteredData.filter(d => d.pro_reitoria === pro);
+        dataLOAByPro.push(rows.reduce((acc, r) => acc + (r.loa_2026 || 0), 0));
+        dataProjByPro.push(rows.reduce((acc, r) => acc + (r.projecao_2026 || 0), 0));
+        dataNecByPro.push(rows.reduce((acc, r) => acc + (r.necessidade_2027 || 0), 0));
+    });
+
+    const ctxPro = document.getElementById('chartProReitoriaCanvas').getContext('2d');
+    if (chartProReitoriaInstance) chartProReitoriaInstance.destroy();
+
+    chartProReitoriaInstance = new Chart(ctxPro, {
+        type: 'bar',
+        data: {
+            labels: proReitorias,
+            datasets: [
+                {
+                    label: 'LOA 2026',
+                    data: dataLOAByPro,
+                    backgroundColor: '#d97706',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Projeção 2026',
+                    data: dataProjByPro,
+                    backgroundColor: '#1e3a8a',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Necessidade 2027',
+                    data: dataNecByPro,
+                    backgroundColor: '#059669',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11, weight: '600' } } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.raw)}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: val => {
+                            if (val >= 1e6) return 'R$ ' + (val / 1e6).toFixed(1) + ' mi';
+                            if (val >= 1e3) return 'R$ ' + (val / 1e3).toFixed(0) + ' mil';
+                            return 'R$ ' + val;
+                        },
+                        font: { size: 10 }
+                    },
+                    grid: { color: '#f1f5f9' }
+                },
+                x: {
+                    ticks: { font: { size: 10, weight: '600' } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 2. Gráfico GND (Doughnut)
+    const gndMap = {};
+    filteredData.forEach(d => {
+        const g = d.gnd_desc || 'Não Definido';
+        gndMap[g] = (gndMap[g] || 0) + (d.loa_2026 || 0);
+    });
+
+    const gndLabels = Object.keys(gndMap);
+    const gndValues = Object.values(gndMap);
+    const gndColors = ['#0284c7', '#d97706', '#db2777', '#64748b'];
+
+    const ctxGND = document.getElementById('chartGNDCanvas').getContext('2d');
+    if (chartGNDInstance) chartGNDInstance.destroy();
+
+    chartGNDInstance = new Chart(ctxGND, {
+        type: 'doughnut',
+        data: {
+            labels: gndLabels,
+            datasets: [{
+                data: gndValues,
+                backgroundColor: gndColors.slice(0, gndLabels.length),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.label}: ${formatBRL(ctx.raw)}`
+                    }
+                }
+            },
+            cutout: '62%'
+        }
+    });
+
+    // 3. Gráfico Subações — BARRAS HORIZONTAIS COM TODAS AS SUBAÇÕES DA SELEÇÃO ATIVA
+    const drilldownRows = [...filteredData];
+    const acaoSelectVal = document.getElementById('filterAcao').value;
+    let drillTitleText = `3 - Detalhamento de Subações (${drilldownRows.length} subações na seleção ativa)`;
+
+    if (acaoSelectVal) {
+        const selectedAcaoObj = rawData.find(d => String(d.acao_cod) === String(acaoSelectVal));
+        const acaoNome = selectedAcaoObj ? `${selectedAcaoObj.acao_cod} - ${selectedAcaoObj.acao_desc}` : `Ação ${acaoSelectVal}`;
+        drillTitleText = `3 - Subações da Ação "${acaoNome}" (${drilldownRows.length} subações)`;
+    }
+
+    document.getElementById('drilldownTitle').innerHTML = `
+        <svg width="18" height="18" fill="none" stroke="#059669" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        ${drillTitleText}
+    `;
+
+    // Ajuste dinâmico da altura do container para permitir rolagem e visibilidade perfeita de todas as barras
+    const dynamicHeight = Math.max(380, drilldownRows.length * 32);
+    const canvasContainer = document.getElementById('subacoesCanvasContainer');
+    canvasContainer.style.height = dynamicHeight + 'px';
+
+    const subLabels = drilldownRows.map(r => {
+        const desc = r.subacao_desc.length > 45 ? r.subacao_desc.substring(0, 45) + '...' : r.subacao_desc;
+        return `${r.subacao_cod} - ${desc}`;
+    });
+    const subLOA = drilldownRows.map(r => r.loa_2026 || 0);
+    const subProj = drilldownRows.map(r => r.projecao_2026 || 0);
+    const subNec = drilldownRows.map(r => r.necessidade_2027 || 0);
+
+    const ctxSub = document.getElementById('chartSubacoesCanvas').getContext('2d');
+    if (chartSubacoesInstance) chartSubacoesInstance.destroy();
+
+    chartSubacoesInstance = new Chart(ctxSub, {
+        type: 'bar',
+        data: {
+            labels: subLabels,
+            datasets: [
+                {
+                    label: 'LOA 2026',
+                    data: subLOA,
+                    backgroundColor: '#d97706',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Projeção 2026',
+                    data: subProj,
+                    backgroundColor: '#1e3a8a',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Necessidade 2027',
+                    data: subNec,
+                    backgroundColor: '#059669',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y', // Configurado explicitamente para BARRAS HORIZONTAIS
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11, weight: '600' } } },
+                tooltip: {
+                    callbacks: {
+                        title: ctx => {
+                            const idx = ctx[0].dataIndex;
+                            const r = drilldownRows[idx];
+                            return `${r.subacao_cod} - ${r.subacao_desc}`;
+                        },
+                        label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.raw)}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        callback: val => {
+                            if (val >= 1e6) return 'R$ ' + (val / 1e6).toFixed(1) + ' mi';
+                            if (val >= 1e3) return 'R$ ' + (val / 1e3).toFixed(0) + ' mil';
+                            return 'R$ ' + val;
+                        },
+                        font: { size: 10 }
+                    },
+                    grid: { color: '#f1f5f9' }
+                },
+                y: {
+                    ticks: {
+                        font: { size: 10, weight: '600' },
+                        autoSkip: false
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// Renderizar Tabela Analítica com Paginação
+function renderTable() {
+    if (!rawData || rawData.length === 0) return;
+
+    // Ordenação
+    filteredData.sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+
+        if (valA === null || valA === undefined || valA === '') valA = (typeof valB === 'number') ? -Infinity : '';
+        if (valB === null || valB === undefined || valB === '') valB = (typeof valA === 'number') ? -Infinity : '';
+
+        if (typeof valA === 'string') {
+            const comp = valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' });
+            return sortDirection === 'asc' ? comp : -comp;
+        } else {
+            return sortDirection === 'asc' ? (valA - valB) : (valB - valA);
+        }
+    });
+
+    const totalRows = filteredData.length;
+    let rowsToDisplay = filteredData;
+    let startIdx = 0;
+    let endIdx = totalRows;
+
+    if (pageSize !== 'all') {
+        const ps = Number(pageSize);
+        const totalPages = Math.ceil(totalRows / ps) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        startIdx = (currentPage - 1) * ps;
+        endIdx = Math.min(startIdx + ps, totalRows);
+        rowsToDisplay = filteredData.slice(startIdx, endIdx);
+    }
+
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    if (rowsToDisplay.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center" style="padding: 24px; color: #94a3b8;">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+    } else {
+        rowsToDisplay.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.onclick = (e) => {
+                if (!e.target.closest('button')) openDetailModal(row);
+            };
+
+            // Badge de GND
+            let gndClass = 'badge-gnd-custeio';
+            if (row.gnd_desc && row.gnd_desc.includes('Invest')) gndClass = 'badge-gnd-invest';
+            if (row.gnd_desc && row.gnd_desc.includes('Pessoal')) gndClass = 'badge-gnd-pessoal';
+
+            // Justificativa formatada
+            let justCell = '-';
+            if (row.justificativa && row.justificativa.trim() !== '') {
+                justCell = `<button class="btn-view-just" onclick="openDetailModalById(${row.id})">🔍 Ver Justificativa</button>`;
+            }
+
+            tr.innerHTML = `
+                <td class="font-mono font-bold">${row.subacao_cod}</td>
+                <td title="${escapeHtml(row.subacao_desc)}" style="max-width: 260px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(row.subacao_desc)}</td>
+                <td><span class="badge-pill badge-pro">${escapeHtml(row.pro_reitoria)}</span></td>
+                <td><span class="badge-pill ${gndClass}">${escapeHtml(row.gnd_desc)}</span></td>
+                <td title="${row.acao_cod} - ${escapeHtml(row.acao_desc)}" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis;">${row.acao_cod} - ${escapeHtml(row.acao_desc)}</td>
+                <td title="${row.programa_cod} - ${escapeHtml(row.programa_desc)}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${row.programa_cod} - ${escapeHtml(row.programa_desc)}</td>
+                <td class="text-right font-mono">${formatBRL(row.loa_2026)}</td>
+                <td class="text-right font-mono">${formatBRL(row.projecao_2026)}</td>
+                <td class="text-right font-mono font-bold" style="color: #047857;">${formatBRL(row.necessidade_2027)}</td>
+                <td class="text-center">${justCell}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Informação de Paginação
+    const infoText = totalRows === 0 
+        ? '0 registros' 
+        : `Mostrando ${startIdx + 1} a ${endIdx} de ${totalRows} registros`;
+    document.getElementById('paginationInfo').textContent = infoText;
+
+    renderPaginationControls(totalRows);
+}
+
+function renderPaginationControls(totalRows) {
+    const controls = document.getElementById('paginationControls');
+    controls.innerHTML = '';
+    if (pageSize === 'all' || totalRows <= Number(pageSize)) return;
+
+    const ps = Number(pageSize);
+    const totalPages = Math.ceil(totalRows / ps);
+
+    // Botão Anterior
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.innerHTML = '&lsaquo;';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => { currentPage--; renderTable(); };
+    controls.appendChild(prevBtn);
+
+    // Páginas numéricas
+    for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= currentPage - 2 && p <= currentPage + 2)) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `page-btn ${p === currentPage ? 'active' : ''}`;
+            pageBtn.textContent = p;
+            pageBtn.onclick = () => { currentPage = p; renderTable(); };
+            controls.appendChild(pageBtn);
+        } else if (p === currentPage - 3 || p === currentPage + 3) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.padding = '4px 6px';
+            controls.appendChild(dots);
+        }
+    }
+
+    // Botão Próximo
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.innerHTML = '&rsaquo;';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => { currentPage++; renderTable(); };
+    controls.appendChild(nextBtn);
+}
+
+function onPageSizeChange() {
+    pageSize = document.getElementById('pageSizeSelect').value;
+    currentPage = 1;
+    renderTable();
+}
+
+function sortTable(column) {
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'asc';
+    }
+    renderTable();
+}
+
+// Modal de Detalhes
+function openDetailModalById(id) {
+    const row = rawData.find(d => d.id === id);
+    if (row) openDetailModal(row);
+}
+
+function openDetailModal(row) {
+    document.getElementById('modalTitle').textContent = `Subação ${row.subacao_cod} - ${row.subacao_desc}`;
+    const modalBody = document.getElementById('modalBody');
+
+    const justHtml = row.justificativa && row.justificativa.trim() !== ''
+        ? `<div class="justificativa-box"><strong>Justificativa da Demanda 2027:</strong><br>${escapeHtml(row.justificativa)}</div>`
+        : `<div style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Nenhuma justificativa formal anexada para esta subação.</div>`;
+
+    modalBody.innerHTML = `
+        <div class="detail-row"><span class="detail-label">Pró-Reitoria:</span><span class="detail-value font-bold">${escapeHtml(row.pro_reitoria)}</span></div>
+        <div class="detail-row"><span class="detail-label">Natureza (GND):</span><span class="detail-value">${escapeHtml(row.gnd_cod)} - ${escapeHtml(row.gnd_desc)}</span></div>
+        <div class="detail-row"><span class="detail-label">Ação:</span><span class="detail-value">${row.acao_cod} - ${escapeHtml(row.acao_desc)}</span></div>
+        <div class="detail-row"><span class="detail-label">Programa:</span><span class="detail-value">${row.programa_cod} - ${escapeHtml(row.programa_desc)}</span></div>
+        <div class="detail-row"><span class="detail-label">Unidade (UO):</span><span class="detail-value">${row.uo_cod} - ${escapeHtml(row.uo_desc)}</span></div>
+        <div class="detail-row"><span class="detail-label">LOA 2026:</span><span class="detail-value font-mono font-bold">${formatBRL(row.loa_2026)}</span></div>
+        <div class="detail-row"><span class="detail-label">Projeção 2026:</span><span class="detail-value font-mono">${formatBRL(row.projecao_2026)}</span></div>
+        <div class="detail-row"><span class="detail-label">Necessidade 2027:</span><span class="detail-value font-mono font-bold" style="color: #047857;">${formatBRL(row.necessidade_2027)}</span></div>
+        <div style="margin-top: 10px;">
+            <div class="detail-label" style="margin-bottom: 6px;">Memória Justificativa 2027:</div>
+            ${justHtml}
+        </div>
+    `;
+
+    document.getElementById('detailModal').style.display = 'flex';
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+// Modal de Importação Excel (.xlsx)
+function openImportModal() {
+    document.getElementById('importStatus').style.display = 'none';
+    document.getElementById('importModal').style.display = 'flex';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+function initDropzone() {
+    const dropzone = document.getElementById('dropzone');
+    if (!dropzone) return;
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dragover');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dragover');
+        }, false);
+    });
+
+    dropzone.addEventListener('drop', e => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) processExcelFile(files[0]);
+    });
+}
+
+function handleFileSelect(event) {
+    const files = event.target.files;
+    if (files.length > 0) processExcelFile(files[0]);
+}
+
+function processExcelFile(file) {
+    const statusEl = document.getElementById('importStatus');
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#1e3a8a';
+    statusEl.textContent = 'Processando arquivo Excel...';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            if (typeof XLSX === 'undefined') {
+                alert('A biblioteca SheetJS não está carregada. Verifique a conexão com a internet.');
+                return;
+            }
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // Procurar pela aba BaseV2 (case-insensitive) ou usar a aba 2 / aba 1
+            let sheetName = workbook.SheetNames.find(s => s.trim().toLowerCase() === 'basev2' || s.trim().toLowerCase() === 'base v2');
+            if (!sheetName) {
+                sheetName = workbook.SheetNames.length > 1 ? workbook.SheetNames[1] : workbook.SheetNames[0];
+            }
+
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+            if (jsonData.length === 0) {
+                statusEl.style.color = '#dc2626';
+                statusEl.textContent = 'Erro: A aba selecionada está vazia.';
+                return;
+            }
+
+            // Mapeamento rigoroso e preciso das 16 colunas da BaseV2
+            const newRecords = jsonData.map((row, idx) => {
+                const getVal = (keys) => {
+                    for (let k of keys) {
+                        for (let prop in row) {
+                            if (prop.trim().toLowerCase() === k.trim().toLowerCase() && row[prop] !== undefined && row[prop] !== '') {
+                                return row[prop];
+                            }
+                        }
+                    }
+                    return '';
+                };
+
+                const parseNum = (val) => {
+                    if (val === '' || val === null || val === undefined) return null;
+                    if (typeof val === 'number') return val;
+                    const cleaned = String(val).replace(/\s/g, '').replace(/R\$/g, '').replace(/\./g, '').replace(',', '.');
+                    const n = parseFloat(cleaned);
+                    return isNaN(n) ? null : n;
+                };
+
+                return {
+                    id: idx + 1,
+                    ano: Number(getVal(['Ano'])) || 2026,
+                    uo_cod: Number(getVal(['Código UO', 'Codigo UO', 'UO'])) || 24201,
+                    uo_desc: String(getVal(['Unidade Orçamentária', 'Unidade Orcamentaria', 'UO Desc']) || 'UEMA').trim(),
+                    subacao_cod: Number(getVal(['Subação N', 'Subacao N', 'Subação', 'Subacao'])) || 0,
+                    subacao_desc: String(getVal(['Subação Descrição', 'Subacao Descricao', 'Subação Desc', 'Subacao Desc']) || '').trim(),
+                    acao_cod: Number(getVal(['Ação N', 'Acao N', 'Ação', 'Acao'])) || 0,
+                    acao_desc: String(getVal(['Ação Descrição', 'Acao Descricao', 'Ação Desc', 'Acao Desc']) || '').trim(),
+                    programa_cod: Number(getVal(['Programa N', 'Programa'])) || 0,
+                    programa_desc: String(getVal(['Programa Descrição', 'Programa Descricao', 'Programa Desc']) || '').trim(),
+                    gnd_cod: String(getVal(['GND N', 'GND']) || '').trim(),
+                    gnd_desc: String(getVal(['GND Descrição', 'GND Descricao', 'GND Desc']) || '').trim(),
+                    pro_reitoria: String(getVal(['PRÓ-REITORIA', 'PRO-REITORIA', 'Pró-Reitoria', 'Pro-Reitoria']) || '').trim(),
+                    loa_2026: parseNum(getVal(['LOA 2026', 'LOA'])) || 0,
+                    projecao_2026: parseNum(getVal(['Projeção de Fechamento em 2026', 'Projeção 2026', 'Projecao de Fechamento em 2026'])),
+                    necessidade_2027: parseNum(getVal(['Necessidade 2027', 'Necessidade'])),
+                    justificativa: String(getVal(['Justificativa (Necessidade 2027)', 'Justificativa (Necessidade)', 'Justificativa']) || '').trim()
+                };
+            });
+
+            rawData = newRecords;
+            populateFilterOptions();
+            updateViewVisibility();
+            clearFilters();
+
+            statusEl.style.color = '#059669';
+            statusEl.textContent = `Sucesso! ${rawData.length} linhas carregadas da aba "${sheetName}".`;
+
+            setTimeout(() => {
+                closeImportModal();
+            }, 1000);
+
+        } catch (err) {
+            console.error(err);
+            statusEl.style.color = '#dc2626';
+            statusEl.textContent = 'Erro ao processar o arquivo: ' + err.message;
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function clearAllData() {
+    rawData = [];
+    filteredData = [];
+    updateViewVisibility();
+}
+
+// Exportar CSV Filtrado (Compatível com Excel PT-BR)
+function exportFilteredCSV() {
+    if (!filteredData || filteredData.length === 0) {
+        alert('Nenhum dado disponível para exportação.');
+        return;
+    }
+
+    const headers = [
+        "Ano", "Código UO", "Unidade Orçamentária", "Subação N", "Subação Descrição",
+        "Ação N", "Ação Descrição", "Programa N", "Programa Descrição",
+        "GND N", "GND Descrição", "PRÓ-REITORIA", "LOA 2026",
+        "Projeção de Fechamento em 2026", "Necessidade 2027", "Justificativa (Necessidade 2027)"
+    ];
+
+    let csvContent = "\uFEFF"; // UTF-8 BOM para abrir perfeitamente no Excel
+    csvContent += headers.join(";") + "\n";
+
+    filteredData.forEach(row => {
+        const line = [
+            row.ano,
+            row.uo_cod,
+            `"${(row.uo_desc || '').replace(/"/g, '""')}"`,
+            row.subacao_cod,
+            `"${(row.subacao_desc || '').replace(/"/g, '""')}"`,
+            row.acao_cod,
+            `"${(row.acao_desc || '').replace(/"/g, '""')}"`,
+            row.programa_cod,
+            `"${(row.programa_desc || '').replace(/"/g, '""')}"`,
+            `"${(row.gnd_cod || '').replace(/"/g, '""')}"`,
+            `"${(row.gnd_desc || '').replace(/"/g, '""')}"`,
+            `"${(row.pro_reitoria || '').replace(/"/g, '""')}"`,
+            row.loa_2026 !== null ? row.loa_2026.toString().replace('.', ',') : '',
+            row.projecao_2026 !== null ? row.projecao_2026.toString().replace('.', ',') : '',
+            row.necessidade_2027 !== null ? row.necessidade_2027.toString().replace('.', ',') : '',
+            `"${(row.justificativa || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += line.join(";") + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `PLOA_2027_UEMA_BaseV2_Filtrado_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Fechar modais ao clicar fora
+window.onclick = function(event) {
+    const detailModal = document.getElementById('detailModal');
+    const importModal = document.getElementById('importModal');
+    if (event.target === detailModal) closeDetailModal();
+    if (event.target === importModal) closeImportModal();
+};
+</script>
+
+</body>
+</html>
